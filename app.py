@@ -6,10 +6,14 @@ import qrcode
 import qrcode.image.svg
 from flask import Flask, Response, jsonify, make_response, redirect, render_template, request, url_for
 from markupsafe import Markup
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 from clinic_queue import ClinicQueue
 
 app = Flask(__name__)
+# When hosted (e.g. on Render), a proxy handles HTTPS and forwards plain HTTP to us.
+# Trust its headers so generated links, like the QR code, use the real https:// address.
+app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 queue = ClinicQueue()
 
 
