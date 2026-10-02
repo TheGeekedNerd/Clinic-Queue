@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}Staff · Clinic Queue{% endblock %}
+{% block body_class %}staff{% endblock %}
+
+{% block content %}
+<section class="card hero">
+  <p class="label">Now serving</p>
+  <p class="ticket-number" id="serving">—</p>
+
+  <button class="button primary big" id="next" type="button">Next patient</button>
+
+  <dl class="stats">
+    <div><dt>Waiting</dt><dd id="waiting-count">—</dd></div>
+    <div><dt>Avg. per patient</dt><dd id="avg">—</dd></div>
+  </dl>
+
+  <div class="upcoming">
+    <p class="label">Up next</p>
+    <ol id="upcoming" class="chips"></ol>
+  </div>
+</section>
+
+<p class="footer-actions">
+  <a href="{{ url_for('join_page') }}" target="_blank">Open patient page</a>
+  <a href="{{ url_for('poster_page') }}" target="_blank">Door QR poster</a>
+  <button class="button link" id="reset" type="button">Reset queue</button>
+</p>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const nextButton = document.getElementById("next");
+
+  subscribeToQueue((state) => {
+    document.getElementById("serving").textContent = formatServing(state);
+    document.getElementById("waiting-count").textContent = state.waiting.length;
+    document.getElementById("avg").textContent =
+      state.estimate_is_default ? `~${state.minutes_per_patient} min` : `${state.minutes_per_patient.toFixed(1)} min`;
+
+    const list = document.getElementById("upcoming");
+    list.replaceChildren(...state.waiting.slice(0, 8).map((n) => {
+      const item = document.createElement("li");
+      item.textContent = n;
+      return item;
+    }));
+    if (state.waiting.length > 8) {
+      const more = document.createElement("li");
+      more.className = "more";
+      more.textContent = `+${state.waiting.length - 8}`;
+      list.append(more);
+    }
+    if (state.waiting.length === 0) {
+      const empty = document.createElement("li");
+      empty.className = "more";
+      empty.textContent = "Nobody waiting";
+      list.append(empty);
+    }
+    nextButton.textContent = state.waiting.length === 0 && state.serving !== null ? "Finish patient" : "Next patient";
+  });
+
+  nextButton.addEventListener("click", async () => {
+    nextButton.disabled = true;  // avoid skipping someone with a double tap
+    try {
+      await fetch("/api/next", { method: "POST" });
+    } finally {
+      setTimeout(() => { nextButton.disabled = false; }, 600);
+    }
+  });
+
+  document.getElementById("reset").addEventListener("click", async () => {
+    if (confirm("Clear the whole queue and start again from number 1?")) {
+      await fetch("/api/reset", { method: "POST" });
+    }
+  });
+</script>
+{% endblock %}

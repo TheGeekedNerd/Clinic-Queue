@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Join the queue · Clinic Queue{% endblock %}
+
+{% block content %}
+<section class="card hero">
+  <h1>Join the queue</h1>
+  <p class="lead">Take a number, then wait somewhere comfortable. This page will show your place in line.</p>
+
+  <dl class="stats">
+    <div><dt>Now serving</dt><dd id="serving">—</dd></div>
+    <div><dt>Waiting</dt><dd id="waiting-count">—</dd></div>
+  </dl>
+  <p class="estimate" id="estimate">&nbsp;</p>
+
+  <form method="post" action="{{ url_for('join') }}">
+    <button class="button primary" type="submit">Join queue</button>
+  </form>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  subscribeToQueue((state) => {
+    document.getElementById("serving").textContent = formatServing(state);
+    document.getElementById("waiting-count").textContent = state.waiting.length;
+    // A new patient waits for everyone already waiting, plus whoever is with staff now.
+    const ahead = state.waiting.length + (state.serving === null ? 0 : 1);
+    document.getElementById("estimate").textContent =
+      ahead === 0 ? "No wait right now" : `If you join now: ${formatWait(estimateMinutes(state, ahead)).toLowerCase()}`;
+  });
+</script>
+{% endblock %}

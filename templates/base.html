@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Clinic Queue{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="{% block body_class %}{% endblock %}">
+  <header class="topbar">
+    <span class="brand">Clinic Queue</span>
+  </header>
+  <p id="connection" class="connection" hidden>Reconnecting… numbers may be out of date.</p>
+  <main class="page">
+    {% block content %}{% endblock %}
+  </main>
+  <script src="{{ url_for('static', filename='live.js') }}"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

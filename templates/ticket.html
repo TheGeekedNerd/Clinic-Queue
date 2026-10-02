@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}Ticket {{ number }} · Clinic Queue{% endblock %}
+
+{% block content %}
+<section class="card hero" id="ticket" data-number="{{ number }}">
+  <p class="label">Your number</p>
+  <p class="ticket-number">{{ number }}</p>
+
+  <div id="status" class="status" aria-live="polite">
+    <p class="status-headline" id="headline">Loading…</p>
+    <p class="estimate" id="estimate">&nbsp;</p>
+  </div>
+
+  <dl class="stats">
+    <div><dt>Now serving</dt><dd id="serving">—</dd></div>
+    <div><dt>People ahead</dt><dd id="ahead">—</dd></div>
+  </dl>
+  <p class="hint">Keep this page open, or bookmark it. It updates by itself.</p>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const myNumber = Number(document.getElementById("ticket").dataset.number);
+  const card = document.getElementById("ticket");
+  const headline = document.getElementById("headline");
+  const estimate = document.getElementById("estimate");
+
+  subscribeToQueue((state) => {
+    document.getElementById("serving").textContent = formatServing(state);
+    card.classList.remove("is-turn", "is-done");
+
+    if (state.serving === myNumber) {
+      card.classList.add("is-turn");
+      headline.textContent = "It's your turn!";
+      estimate.textContent = "Please go to the consulting room.";
+      document.getElementById("ahead").textContent = "0";
+      return;
+    }
+
+    const position = state.waiting.indexOf(myNumber);
+    if (position === -1) {
+      card.classList.add("is-done");
+      headline.textContent = myNumber > state.last_issued ? "Ticket not found" : "Your number has been called";
+      estimate.innerHTML = 'Need to see someone? <a href="/">Join the queue again</a>.';
+      document.getElementById("ahead").textContent = "—";
+      return;
+    }
+
+    // `position` = people waiting in front of me; the person with staff now also counts toward my wait.
+    const ahead = position + (state.serving === null ? 0 : 1);
+    document.getElementById("ahead").textContent = position;
+    headline.textContent = position === 0 ? "You're next" : `${position} ${position === 1 ? "person" : "people"} ahead of you`;
+    estimate.textContent = formatWait(estimateMinutes(state, ahead)) + (state.estimate_is_default ? " (rough guess)" : "");
+  });
+</script>
+{% endblock %}

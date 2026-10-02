@@ -1,0 +1,158 @@
+:root {
+  --bg: #f3f6f5;
+  --card: #ffffff;
+  --text: #15201d;
+  --muted: #5b6b66;
+  --line: #dde5e2;
+  --accent: #0f7a5c;
+  --accent-text: #ffffff;
+  --turn: #fff4d6;
+  --turn-line: #e0a800;
+  --warn: #8a4b00;
+  --radius: 16px;
+  color-scheme: light dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0f1514;
+    --card: #18211f;
+    --text: #e8efed;
+    --muted: #9db0aa;
+    --line: #2a3634;
+    --accent: #2fb38b;
+    --accent-text: #06120e;
+    --turn: #3a2f0c;
+    --turn-line: #e0a800;
+    --warn: #ffc06b;
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.5;
+  font-size: 18px; /* larger default: many patients are elderly */
+}
+
+.topbar {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--line);
+  background: var(--card);
+}
+.brand { font-weight: 700; color: var(--accent); }
+
+.connection {
+  margin: 0;
+  padding: 8px 16px;
+  background: var(--turn);
+  color: var(--warn);
+  font-size: 15px;
+  text-align: center;
+}
+
+.page {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 24px 16px 48px;
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 28px 22px;
+}
+.hero { text-align: center; }
+
+h1 { margin: 0 0 8px; font-size: 28px; }
+.lead { margin: 0 0 24px; color: var(--muted); }
+.label {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.ticket-number {
+  margin: 4px 0 16px;
+  font-size: 88px;
+  font-weight: 800;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.status-headline { margin: 0; font-size: 24px; font-weight: 700; }
+.estimate { margin: 6px 0 20px; color: var(--muted); font-size: 20px; }
+
+.stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin: 0 0 20px;
+}
+.stats div {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px 8px;
+}
+.stats dt { color: var(--muted); font-size: 14px; }
+.stats dd { margin: 2px 0 0; font-size: 28px; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+.hint { margin: 0; color: var(--muted); font-size: 15px; }
+
+.button {
+  font: inherit;
+  border: 0;
+  border-radius: 12px;
+  cursor: pointer;
+}
+.button.primary {
+  width: 100%;
+  padding: 18px;
+  background: var(--accent);
+  color: var(--accent-text);
+  font-size: 20px;
+  font-weight: 700;
+}
+.button.primary:disabled { opacity: 0.6; cursor: default; }
+.button.big { padding: 26px; font-size: 26px; margin-bottom: 24px; }
+.button.link { background: none; color: var(--muted); text-decoration: underline; padding: 0; }
+
+/* Ticket states */
+.is-turn { background: var(--turn); border-color: var(--turn-line); }
+.is-turn .status-headline { font-size: 30px; }
+.is-done .ticket-number { color: var(--muted); }
+
+.upcoming { text-align: left; }
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+}
+.chips li {
+  padding: 6px 14px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.chips li.more { border-style: dashed; color: var(--muted); font-weight: 400; }
+
+.footer-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 16px 4px;
+  font-size: 15px;
+}
+.footer-actions a { color: var(--accent); }
