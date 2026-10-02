@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Waiting room · Clinic Queue</title>
+  <style>
+    /* Made for a TV across the room: dark background, huge numbers, sized to the screen. */
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      background: #0d1513;
+      color: #f2f7f5;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      overflow: hidden;
+    }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 2vh 3vw;
+      font-size: clamp(16px, 2.2vw, 32px);
+      color: #9db0aa;
+    }
+    header .brand { color: #2fb38b; font-weight: 700; }
+    main {
+      display: grid;
+      grid-template-columns: 3fr 2fr;
+      gap: 3vw;
+      padding: 0 3vw;
+      align-items: center;
+    }
+    .label {
+      margin: 0;
+      color: #9db0aa;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      font-size: clamp(16px, 2.4vw, 36px);
+    }
+    .serving {
+      text-align: center;
+      padding: 4vh 2vw;
+      border-radius: 3vw;
+      background: #18211f;
+      border: 3px solid #2a3634;
+    }
+    .serving .number {
+      margin: 0;
+      font-size: clamp(96px, 22vw, 360px);
+      font-weight: 800;
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+    }
+    .serving.flash { animation: flash 1.2s ease-out 3; }
+    @keyframes flash {
+      0% { background: #2fb38b; border-color: #2fb38b; color: #06120e; }
+      100% { background: #18211f; border-color: #2a3634; color: inherit; }
+    }
+    .side { display: grid; gap: 4vh; }
+    .next-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1vw;
+      list-style: none;
+      margin: 1.5vh 0 0;
+      padding: 0;
+      font-size: clamp(24px, 4vw, 64px);
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+    }
+    .next-list li { padding: 0.15em 0.5em; border: 2px solid #2a3634; border-radius: 0.4em; }
+    .next-list li.empty { border-style: dashed; color: #9db0aa; font-weight: 400; font-size: 0.6em; }
+    .wait { margin: 1vh 0 0; font-size: clamp(22px, 3.4vw, 54px); font-weight: 700; }
+    footer {
+      display: flex;
+      align-items: center;
+      gap: 2vw;
+      padding: 2vh 3vw 3vh;
+      font-size: clamp(16px, 2.2vw, 34px);
+    }
+    .qr { width: clamp(90px, 13vw, 220px); padding: 0.6vw; background: #fff; border-radius: 0.6vw; flex: none; }
+    .qr svg { display: block; width: 100%; height: auto; }
+    footer strong { color: #2fb38b; }
+    .connection { color: #ffc06b; }
+    @media (max-aspect-ratio: 1/1) {
+      body { overflow: auto; }
+      main { grid-template-columns: 1fr; padding-bottom: 3vh; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <span class="brand">Clinic Queue</span>
+    <span id="connection" class="connection" hidden>Reconnecting…</span>
+    <span id="clock"></span>
+  </header>
+
+  <main>
+    <section class="serving" id="serving-box" aria-live="assertive">
+      <p class="label">Now serving</p>
+      <p class="number" id="serving">—</p>
+    </section>
+
+    <div class="side">
+      <section>
+        <p class="label">Next up</p>
+        <ol class="next-list" id="next"></ol>
+      </section>
+      <section>
+        <p class="label">Wait if you join now</p>
+        <p class="wait" id="wait">—</p>
+      </section>
+    </div>
+  </main>
+
+  <footer>
+    <div class="qr" aria-hidden="true">{{ qr_svg }}</div>
+    <p>No need to stand in line. <strong>Scan to join the queue</strong> and wait wherever you're comfortable.</p>
+  </footer>
+
+  <script src="{{ url_for('static', filename='live.js') }}"></script>
+  <script>
+    const servingBox = document.getElementById("serving-box");
+    let lastServing;
+
+    subscribeToQueue((state) => {
+      document.getElementById("serving").textContent = formatServing(state);
+      // Flash when a new number is called, so people glancing up notice the change.
+      if (lastServing !== undefined && state.serving !== lastServing && state.serving !== null) {
+        servingBox.classList.remove("flash");
+        void servingBox.offsetWidth;  // restart the animation
+        servingBox.classList.add("flash");
+      }
+      lastServing = state.serving;
+
+      const next = document.getElementById("next");
+      const upcoming = state.waiting.slice(0, 5).map((n) => {
+        const item = document.createElement("li");
+        item.textContent = n;
+        return item;
+      });
+      if (upcoming.length === 0) {
+        const empty = document.createElement("li");
+        empty.className = "empty";
+        empty.textContent = "Nobody waiting";
+        upcoming.push(empty);
+      }
+      next.replaceChildren(...upcoming);
+
+      const ahead = state.waiting.length + (state.serving === null ? 0 : 1);
+      document.getElementById("wait").textContent =
+        ahead === 0 ? "No wait" : formatWait(estimateMinutes(state, ahead));
+    });
+
+    const clock = document.getElementById("clock");
+    const tick = () => { clock.textContent = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }); };
+    tick();
+    setInterval(tick, 10000);
+  </script>
+</body>
+</html>

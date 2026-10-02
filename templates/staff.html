@@ -21,10 +21,16 @@
 </section>
 
 <p class="footer-actions">
-  <a href="{{ url_for('join_page') }}" target="_blank">Open patient page</a>
+  <a href="{{ url_for('join_page') }}" target="_blank">Patient page</a>
+  <a href="{{ url_for('display_page') }}" target="_blank">Waiting-room screen</a>
   <a href="{{ url_for('poster_page') }}" target="_blank">Door QR poster</a>
-  <button class="button link" id="reset" type="button">Reset queue</button>
 </p>
+<div class="footer-actions">
+  <button class="button link" id="reset" type="button">Reset queue</button>
+  <form method="post" action="{{ url_for('staff_logout') }}">
+    <button class="button link" type="submit">Log out</button>
+  </form>
+</div>
 {% endblock %}
 
 {% block scripts %}
@@ -58,10 +64,17 @@
     nextButton.textContent = state.waiting.length === 0 && state.serving !== null ? "Finish patient" : "Next patient";
   });
 
+  async function staffAction(path) {
+    const response = await fetch(path, { method: "POST" });
+    if (response.status === 401) {
+      window.location = "{{ url_for('staff_login') }}";  // login expired
+    }
+  }
+
   nextButton.addEventListener("click", async () => {
     nextButton.disabled = true;  // avoid skipping someone with a double tap
     try {
-      await fetch("/api/next", { method: "POST" });
+      await staffAction("/api/next");
     } finally {
       setTimeout(() => { nextButton.disabled = false; }, 600);
     }
@@ -69,7 +82,7 @@
 
   document.getElementById("reset").addEventListener("click", async () => {
     if (confirm("Clear the whole queue and start again from number 1?")) {
-      await fetch("/api/reset", { method: "POST" });
+      await staffAction("/api/reset");
     }
   });
 </script>

@@ -156,3 +156,40 @@ h1 { margin: 0 0 8px; font-size: 28px; }
   font-size: 15px;
 }
 .footer-actions a { color: var(--accent); }
+
+/* Staff login */
+.login-form { display: grid; gap: 14px; }
+.login-form input {
+  font: inherit;
+  font-size: 28px;
+  text-align: center;
+  letter-spacing: 0.3em;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--bg);
+  color: var(--text);
+}
+.form-error { margin: 0; color: var(--warn); font-weight: 600; }
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+.footer-actions form { margin: 0; }
+
+/* "Notify me" on the ticket page */
+.notify { margin: 0 0 20px; }
+.button.secondary {
+  width: 100%;
+  padding: 14px;
+  background: transparent;
+  color: var(--accent);
+  border: 2px solid var(--accent);
+  font-weight: 700;
+}
+.button.secondary:disabled { opacity: 0.7; cursor: default; }
+.notify-note { margin: 8px 0 0; color: var(--muted); font-size: 15px; }

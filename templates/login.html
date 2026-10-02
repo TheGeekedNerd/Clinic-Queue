@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Staff login · Clinic Queue{% endblock %}
+
+{% block content %}
+<section class="card hero">
+  <h1>Staff login</h1>
+  {% if disabled %}
+  <p class="lead">Staff login is turned off. Set the <code>STAFF_PIN</code> setting on the server to turn it on.</p>
+  {% else %}
+  <p class="lead">Enter the staff PIN to manage the queue.</p>
+  <form method="post" class="login-form">
+    <label for="pin" class="visually-hidden">Staff PIN</label>
+    <input id="pin" name="pin" type="password" inputmode="numeric" autocomplete="current-password"
+           placeholder="PIN" required autofocus>
+    {% if error %}<p class="form-error" role="alert">{{ error }}</p>{% endif %}
+    <button class="button primary" type="submit">Log in</button>
+  </form>
+  {% endif %}
+</section>
+{% endblock %}

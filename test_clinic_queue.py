@@ -71,3 +71,30 @@ def test_wait_for_change_returns_immediately_when_already_behind():
     snapshot, new_version = queue.wait_for_change(version, timeout=0)
     assert snapshot["waiting"] == [1]
     assert new_version != version
+
+
+def test_queue_survives_a_restart(tmp_path):
+    clock = FakeClock()
+    db = tmp_path / "queue.db"
+    queue = ClinicQueue(db, clock=clock)
+    for _ in range(3):
+        queue.join()
+    queue.call_next()          # patient 1 starts at t=0
+    clock.now = 120
+    queue.call_next()          # patient 1 took 2 min; patient 2 now being seen
+    before = queue.snapshot()
+    queue.close()
+
+    restarted = ClinicQueue(db, clock=clock)  # e.g. after a crash
+    assert restarted.snapshot() == before
+    assert restarted.snapshot()["serving"] == 2
+    assert restarted.minutes_per_patient() == 2
+    assert restarted.join() == 4  # numbering carries on
+    restarted.close()
+
+
+def test_reset_gives_the_queue_a_new_id():
+    queue = ClinicQueue()
+    old_id = queue.snapshot()["queue_id"]
+    queue.reset()
+    assert queue.snapshot()["queue_id"] != old_id

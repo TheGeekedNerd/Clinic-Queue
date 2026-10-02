@@ -11,6 +11,11 @@
     <p class="estimate" id="estimate">&nbsp;</p>
   </div>
 
+  <div class="notify" id="notify-box" hidden>
+    <button class="button secondary" id="notify" type="button">Notify me when I'm close</button>
+    <p class="notify-note" id="notify-note">Leave this page open in the background, and we'll alert you when it's nearly your turn.</p>
+  </div>
+
   <dl class="stats">
     <div><dt>Now serving</dt><dd id="serving">—</dd></div>
     <div><dt>People ahead</dt><dd id="ahead">—</dd></div>
@@ -25,8 +30,71 @@
   const card = document.getElementById("ticket");
   const headline = document.getElementById("headline");
   const estimate = document.getElementById("estimate");
+  const notifyBox = document.getElementById("notify-box");
+  const notifyButton = document.getElementById("notify");
+  const notifyNote = document.getElementById("notify-note");
 
-  subscribeToQueue((state) => {
+  // Alert once when this many people (or fewer) are ahead, and again when it's your turn.
+  const ALERT_WHEN_AHEAD = 2;
+  let lastState = null;
+
+  // --- Small storage helpers: localStorage can be missing or blocked (e.g. private browsing). ---
+  const store = {
+    get(key) { try { return localStorage.getItem(key); } catch { return null; } },
+    set(key, value) { try { localStorage.setItem(key, value); } catch {} },
+  };
+  // Keyed by queue id too, so a reset queue's new "ticket 3" doesn't inherit the old one's settings.
+  const key = (name) => `ticket:${lastState.queue_id}:${myNumber}:${name}`;
+
+  const notificationsSupported =
+    "Notification" in window && "serviceWorker" in navigator && window.isSecureContext;
+
+  function alertsEnabled() {
+    return notificationsSupported && Notification.permission === "granted" && store.get(key("notify")) === "on";
+  }
+
+  async function sendAlert(name, title, body) {
+    if (!alertsEnabled() || store.get(key(name))) return;
+    store.set(key(name), "sent");
+    if (navigator.vibrate) navigator.vibrate([300, 100, 300]);
+    const registration = await navigator.serviceWorker.ready;
+    registration.showNotification(title, {
+      body,
+      tag: `ticket-${myNumber}`,
+      renotify: true,
+      data: { path: location.pathname },
+    });
+  }
+
+  function renderNotifyButton(isWaiting) {
+    notifyBox.hidden = !isWaiting;
+    if (!isWaiting) return;
+    if (!notificationsSupported) {
+      notifyButton.disabled = true;
+      notifyNote.textContent = window.isSecureContext
+        ? "This browser can't show alerts. Keep this page open and check back."
+        : "Alerts only work on the secure (https://) version of this site.";
+    } else if (Notification.permission === "denied") {
+      notifyButton.disabled = true;
+      notifyNote.textContent = "Alerts are blocked for this site in your browser settings.";
+    } else if (alertsEnabled()) {
+      notifyButton.disabled = true;
+      notifyButton.textContent = "✓ We'll alert you when you're close";
+      notifyNote.textContent = "Leave this page open in the background. Closing the tab turns alerts off.";
+    }
+  }
+
+  notifyButton.addEventListener("click", async () => {
+    const permission = await Notification.requestPermission();
+    if (permission === "granted") {
+      await navigator.serviceWorker.register("/sw.js");
+      store.set(key("notify"), "on");
+    }
+    render(lastState);
+  });
+
+  function render(state) {
+    lastState = state;
     document.getElementById("serving").textContent = formatServing(state);
     card.classList.remove("is-turn", "is-done");
 
@@ -35,6 +103,9 @@
       headline.textContent = "It's your turn!";
       estimate.textContent = "Please go to the consulting room.";
       document.getElementById("ahead").textContent = "0";
+      document.title = `Your turn! · Ticket ${myNumber}`;
+      renderNotifyButton(false);
+      sendAlert("alerted-turn", "It's your turn!", `Ticket ${myNumber}: please go to the consulting room.`);
       return;
     }
 
@@ -44,14 +115,28 @@
       headline.textContent = myNumber > state.last_issued ? "Ticket not found" : "Your number has been called";
       estimate.innerHTML = 'Need to see someone? <a href="/">Join the queue again</a>.';
       document.getElementById("ahead").textContent = "—";
+      document.title = `Ticket ${myNumber} · Clinic Queue`;
+      renderNotifyButton(false);
       return;
     }
 
     // `position` = people waiting in front of me; the person with staff now also counts toward my wait.
     const ahead = position + (state.serving === null ? 0 : 1);
+    const wait = formatWait(estimateMinutes(state, ahead));
     document.getElementById("ahead").textContent = position;
     headline.textContent = position === 0 ? "You're next" : `${position} ${position === 1 ? "person" : "people"} ahead of you`;
-    estimate.textContent = formatWait(estimateMinutes(state, ahead)) + (state.estimate_is_default ? " (rough guess)" : "");
-  });
+    estimate.textContent = wait + (state.estimate_is_default ? " (rough guess)" : "");
+    document.title = `(${position} ahead) Ticket ${myNumber} · Clinic Queue`;
+    renderNotifyButton(true);
+    if (ahead <= ALERT_WHEN_AHEAD) {
+      sendAlert("alerted-close", "Almost your turn", `Ticket ${myNumber}: ${wait.toLowerCase()}. Please head back to the clinic.`);
+    }
+  }
+
+  // If alerts were already switched on (e.g. the page was reloaded), make sure the service worker is ready.
+  if (notificationsSupported && Notification.permission === "granted") {
+    navigator.serviceWorker.register("/sw.js");
+  }
+  subscribeToQueue(render);
 </script>
 {% endblock %}
