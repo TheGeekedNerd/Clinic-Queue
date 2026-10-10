@@ -3,6 +3,25 @@
 People lose whole days waiting in clinic queues. This is a virtual queue: patients take a number on their phone,
 then see their place in line and an estimated wait, updating live, instead of standing in a line.
 
+## Try it live
+
+The app is hosted at **https://clinic-queue-y9y1.onrender.com/**
+
+| Page | Address |
+|---|---|
+| Join the queue (patients) | https://clinic-queue-y9y1.onrender.com/ |
+| Staff page | https://clinic-queue-y9y1.onrender.com/staff (add `/staff` to the end of the address) |
+| Waiting-room screen | https://clinic-queue-y9y1.onrender.com/display |
+| Door poster with QR code | https://clinic-queue-y9y1.onrender.com/poster |
+
+**Staff PIN for testing: `12345`**
+
+To see it working, open the join page on your phone and take a number, then open the staff page on another
+device, enter the PIN and press "Next". The phone updates on its own.
+
+The free Render plan puts the app to sleep when nobody is using it, so the first visit can take up to a minute
+to load. Waking it up also clears the queue.
+
 ## Run it
 
 ```powershell
